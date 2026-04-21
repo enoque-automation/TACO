@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TACO — Galeria Nutricional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HEADER -->
+<header id="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">TACO<em>vis</em></span>
+    </div>
+    <div class="dataset-info" id="datasetInfo">
+      <span class="ds-label">Nenhum dataset carregado</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-icon" id="toggleTheme" title="Alternar tema">☀</button>
+    <button class="btn-pill" id="openCompare" title="Comparar selecionados" style="display:none">
+      <span id="compareCount">0</span> Comparar
+    </button>
+    <button class="btn-primary" id="btnLoad">⊕ Carregar Dataset</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════ STATS BAR -->
+<div id="statsBar" class="stats-bar hidden">
+  <div class="stat-item">
+    <span class="stat-num" id="statTotal">0</span>
+    <span class="stat-lbl">alimentos</span>
+  </div>
+  <div class="stat-sep">|</div>
+  <div class="stat-item">
+    <span class="stat-num" id="statCats">0</span>
+    <span class="stat-lbl">categorias</span>
+  </div>
+  <div class="stat-sep">|</div>
+  <div class="stat-item">
+    <span class="stat-num" id="statAvgKcal">—</span>
+    <span class="stat-lbl">kcal médio</span>
+  </div>
+  <div class="stat-sep">|</div>
+  <div class="stat-item">
+    <span class="stat-num" id="statTopProt">—</span>
+    <span class="stat-lbl">mais proteico</span>
+  </div>
+  <div class="stat-sep">|</div>
+  <div class="stat-item">
+    <span class="stat-num" id="statLowKcal">—</span>
+    <span class="stat-lbl">menos calórico</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ TOOLBAR -->
+<div id="toolbar" class="toolbar hidden">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="Buscar por nome, categoria, código…" autocomplete="off">
+    <button class="btn-clear" id="clearSearch" style="display:none">✕</button>
+  </div>
+
+  <div class="toolbar-controls">
+    <select id="filterCat" class="select-pill">
+      <option value="">Todas categorias</option>
+    </select>
+
+    <select id="filterNutr" class="select-pill">
+      <option value="">Filtro nutricional</option>
+      <option value="prot_high">Proteína alta (≥20g)</option>
+      <option value="carb_low">Carboidrato baixo (≤10g)</option>
+      <option value="fat_low">Gordura baixa (≤5g)</option>
+      <option value="low_kcal">Baixo cal (≤100kcal)</option>
+      <option value="with_img">Com imagem</option>
+      <option value="favs">⭐ Favoritos</option>
+    </select>
+
+    <div class="kcal-range-wrap">
+      <span class="range-label">Kcal:</span>
+      <input type="range" id="kcalMin" min="0" max="1000" value="0" step="10">
+      <span id="kcalMinVal">0</span>
+      <span>–</span>
+      <input type="range" id="kcalMax" min="0" max="1000" value="1000" step="10">
+      <span id="kcalMaxVal">1000+</span>
+    </div>
+
+    <select id="sortBy" class="select-pill">
+      <option value="nome">A–Z</option>
+      <option value="kcal_asc">Kcal ↑</option>
+      <option value="kcal_desc">Kcal ↓</option>
+      <option value="prot">Proteína ↓</option>
+      <option value="carb">Carboidrato ↓</option>
+      <option value="fat">Gordura ↓</option>
+      <option value="cat">Categoria</option>
+    </select>
+
+    <div class="view-toggle">
+      <button class="vbtn active" data-view="grid" title="Grid">⊞</button>
+      <button class="vbtn" data-view="list" title="Lista">≡</button>
+    </div>
+
+    <div class="export-menu">
+      <button class="btn-icon" id="exportBtn" title="Exportar">↓</button>
+      <div class="export-dropdown" id="exportDropdown">
+        <button data-exp="favs_json">Favoritos (JSON)</button>
+        <button data-exp="filtered_csv">Lista filtrada (CSV)</button>
+        <button data-exp="snap_json">Snapshot atual (JSON)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ RESULTS INFO -->
+<div id="resultsInfo" class="results-info hidden">
+  <span id="resultsCount"></span>
+  <button id="clearFilters" class="btn-link">Limpar filtros</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════ MAIN -->
+<main id="main">
+
+  <!-- DROP ZONE -->
+  <div id="dropZone" class="drop-zone">
+    <div class="drop-inner">
+      <div class="drop-icon">◈</div>
+      <h2>Galeria Nutricional</h2>
+      <p>Arraste um arquivo JSON ou CSV aqui</p>
+      <span class="drop-or">ou</span>
+      <button class="btn-primary large" id="btnLoadDrop">Selecionar arquivo</button>
+      <p class="drop-hint">Compatível com TACO, TBCA e qualquer dataset tabular</p>
+
+      <div class="recent-files" id="recentFiles" style="display:none">
+        <p class="recent-title">Recentes:</p>
+        <div id="recentList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div id="foodGrid" class="food-grid hidden"></div>
+
+  <!-- PAGINATION -->
+  <div id="pagination" class="pagination hidden">
+    <button id="prevPage" class="btn-page">← Anterior</button>
+    <span id="pageInfo"></span>
+    <button id="nextPage" class="btn-page">Próximo →</button>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════ SIDEBAR DETAIL -->
+<div id="sidebar" class="sidebar">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="sidebar-panel" id="sidebarPanel">
+    <div class="sidebar-header">
+      <div class="sidebar-img-wrap" id="sidebarImgWrap">
+        <img id="sidebarImg" src="" alt="" onerror="this.style.display='none'">
+        <div class="img-placeholder" id="sidebarPlaceholder"></div>
+        <div class="img-actions">
+          <button class="btn-img-action" id="btnChangeImg" title="Alterar imagem">✎</button>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="sidebar-meta">
+        <span class="sidebar-id" id="sidebarId"></span>
+        <span class="cat-badge" id="sidebarCat"></span>
+      </div>
+      <h2 id="sidebarName"></h2>
+
+      <div class="sidebar-actions-row">
+        <button class="btn-fav-lg" id="sidebarFav">☆ Favoritar</button>
+        <button class="btn-compare-sm" id="sidebarCompare">⊕ Comparar</button>
+        <button class="btn-edit-sm" id="sidebarEdit">✎ Editar</button>
+      </div>
+
+      <div id="sidebarNutrients"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ IMG EDITOR MODAL -->
+<div id="imgModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Alterar imagem</h3>
+    <p class="modal-sub" id="imgModalFoodName"></p>
+    <div class="modal-field">
+      <label>URL da imagem:</label>
+      <input type="text" id="imgUrlInput" placeholder="https://…">
+    </div>
+    <div class="modal-or">ou</div>
+    <div class="modal-field">
+      <label>Upload local:</label>
+      <input type="file" id="imgFileInput" accept="image/*">
+    </div>
+    <div class="modal-preview-wrap">
+      <img id="imgPreview" src="" alt="" style="display:none">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="imgModalCancel">Cancelar</button>
+      <button class="btn-primary" id="imgModalSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ EDIT MODAL -->
+<div id="editModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Editar alimento</h3>
+    <div class="modal-field">
+      <label>Nome:</label>
+      <input type="text" id="editName">
+    </div>
+    <div class="modal-field">
+      <label>Categoria:</label>
+      <input type="text" id="editCat">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="editModalCancel">Cancelar</button>
+      <button class="btn-primary" id="editModalSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ COMPARE MODAL -->
+<div id="compareModal" class="modal-overlay hidden">
+  <div class="modal-box wide">
+    <div class="modal-header-row">
+      <h3>Comparador nutricional</h3>
+      <button class="btn-ghost sm" id="compareModalClose">✕</button>
+    </div>
+    <div id="compareTable"></div>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUT -->
+<input type="file" id="fileInput" accept=".json,.csv" style="display:none">
+
+<script src="script.js"></script>
+</body>
+</html>
